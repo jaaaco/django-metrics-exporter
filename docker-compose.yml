@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  exporter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"  # Expose the metrics endpoint
+    depends_on:
+      - db
+    env_file:
+      - .env  # Use the provided .env file
+    networks:
+      - app_network
+
+  db:
+    image: postgres
+    env_file: .env  # Use the same .env file for DB credentials
+    volumes:
+      - ./pg_odata:/var/lib/postgresql/data
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    driver: bridge
