@@ -10,6 +10,11 @@ app = Flask(__name__)
 logins_gauge = Gauge('django_logins_total', 'Total number of logins')
 registrations_gauge = Gauge('django_registrations_total', 'Total number of new user registrations')
 
+# Gauges for database tables
+table_size_gauge = Gauge('db_table_size_bytes', 'Size of the table in bytes', ['table_name'])
+index_size_gauge = Gauge('db_index_size_bytes', 'Size of the table indexes in bytes', ['table_name'])
+row_count_gauge = Gauge('db_table_row_count', 'Number of rows in the table', ['table_name'])
+
 # Database connection
 def get_db_connection():
     return psycopg2.connect(
@@ -35,6 +40,25 @@ def fetch_metrics():
         cursor.execute("SELECT COUNT(*) FROM auth_user;")
         registrations = cursor.fetchone()[0]
         registrations_gauge.set(registrations)
+
+        # Get table metrics
+        cursor.execute("""
+            SELECT
+                relname AS table_name,
+                pg_total_relation_size(relid) AS total_size,
+                pg_indexes_size(relid) AS index_size,
+                n_live_tup AS row_count
+            FROM pg_stat_user_tables
+            ORDER BY total_size DESC
+            LIMIT 10;
+        """)
+        tables = cursor.fetchall()
+
+        # Update Prometheus gauges for table metrics
+        for table_name, total_size, index_size, row_count in tables:
+            table_size_gauge.labels(table_name=table_name).set(total_size)
+            index_size_gauge.labels(table_name=table_name).set(index_size)
+            row_count_gauge.labels(table_name=table_name).set(row_count)
 
         cursor.close()
         conn.close()
