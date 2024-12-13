@@ -1,7 +1,7 @@
 
 # Django Metrics Exporter
 
-**Django Metrics Exporter** is a lightweight containerized solution for exposing Django application metrics (e.g., user logins, registrations) to Prometheus, designed for seamless integration with Grafana for real-time monitoring.
+**Django Metrics Exporter** is a lightweight containerized solution for exposing Django application metrics (e.g., user logins, registrations, and database table stats) to Prometheus, designed for seamless integration with Grafana for real-time monitoring.
 
 ---
 
@@ -9,6 +9,10 @@
 
 - Exposes custom Django metrics via a `/metrics` endpoint.
 - Tracks user logins and registrations by default.
+- Reports database statistics, including:
+  - Total size (bytes) of the 10 largest tables.
+  - Index size (bytes) of the 10 largest tables.
+  - Accurate row count of the 10 largest tables.
 - Easily configurable using environment variables.
 - Integrates with existing Prometheus and Grafana setups.
 
@@ -45,6 +49,18 @@
 
 ---
 
+## Metrics Exposed
+
+| Metric                        | Description                                          |
+|-------------------------------|------------------------------------------------------|
+| `django_logins_total`         | Total number of user logins.                        |
+| `django_registrations_total`  | Total number of new user registrations.             |
+| `db_table_size_bytes`         | Size of a table in bytes (10 largest tables).       |
+| `db_index_size_bytes`         | Size of table indexes in bytes (10 largest tables). |
+| `db_table_row_count`          | Accurate row count for the 10 largest tables.       |
+
+---
+
 ## Environment Variables
 
 | Variable          | Description                       | Default        |
@@ -75,8 +91,8 @@ Add the following job to your Prometheus configuration:
 
 ## Grafana Integration
 
-- Import the metrics (`django_logins_total`, `django_registrations_total`) into your Grafana dashboard.
-- Visualize real-time trends for user activity in your Django application.
+- Import the metrics (`django_logins_total`, `django_registrations_total`, `db_table_size_bytes`, `db_index_size_bytes`, `db_table_row_count`) into your Grafana dashboard.
+- Visualize real-time trends for user activity and database usage.
 
 ---
 
