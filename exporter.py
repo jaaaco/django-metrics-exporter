@@ -46,8 +46,7 @@ def fetch_metrics():
             SELECT
                 relname AS table_name,
                 pg_total_relation_size(relid) AS total_size,
-                pg_indexes_size(relid) AS index_size,
-                n_live_tup AS row_count
+                pg_indexes_size(relid) AS index_size
             FROM pg_stat_user_tables
             ORDER BY total_size DESC
             LIMIT 10;
@@ -55,7 +54,12 @@ def fetch_metrics():
         tables = cursor.fetchall()
 
         # Update Prometheus gauges for table metrics
-        for table_name, total_size, index_size, row_count in tables:
+        for table_name, total_size, index_size in tables:
+            # Accurate row count using COUNT(*)
+            row_count_query = f"SELECT COUNT(*) FROM {table_name};"
+            cursor.execute(row_count_query)
+            row_count = cursor.fetchone()[0]
+
             table_size_gauge.labels(table_name=table_name).set(total_size)
             index_size_gauge.labels(table_name=table_name).set(index_size)
             row_count_gauge.labels(table_name=table_name).set(row_count)
